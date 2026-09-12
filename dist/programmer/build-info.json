@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "templateVersion": "0.3.0",
+  "courseId": "de-090207-programmer",
+  "contentSHA256": "466ff7709629b804173329f0c6ddd131fc53af79dce7b9b0664f7536d41f6014",
+  "status": "working-template-with-demo-exercise",
+  "variants": 30,
+  "completeExam": false
+}

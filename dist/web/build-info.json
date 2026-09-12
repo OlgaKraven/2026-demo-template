@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "templateVersion": "0.3.0",
+  "courseId": "de-090207-web",
+  "contentSHA256": "1a5f5f828b87a974310de99675e44b1c00a0959420ab45711773b111c9cbc6e0",
+  "status": "working-template-with-demo-exercise",
+  "variants": 30,
+  "completeExam": false
+}

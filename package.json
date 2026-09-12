@@ -1,0 +1,17 @@
+{
+  "name": "exam-prep-static-template",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.14.0"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "validate": "node scripts/validate.mjs",
+    "validate:exam": "node scripts/validate.mjs --exam-ready",
+    "test": "node --test tests/*.test.mjs",
+    "preview": "node scripts/serve.mjs",
+    "practice:build": "python scripts/build-practice.py"
+  }
+}

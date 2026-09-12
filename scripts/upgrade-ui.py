@@ -1,0 +1,45 @@
+from pathlib import Path
+p=Path(__file__).resolve().parents[1]
+f=p/'src/app.js';s=f.read_text(encoding='utf-8')
+s=s.replace("let theme=pref.theme", "let stackChoice=pref.stackChoice||{ui:'vanilla',server:'python',store:'sqlite'};\nlet theme=pref.theme")
+s=s.replace('module:module?.id,theme}', 'module:module?.id,theme,stackChoice}')
+s=s.replace('year.exercise.moduleId','year.exercise?.moduleId')
+s=s.replace("if(module.id!==year.exercise?.moduleId)return", "if(!year.exercise||module.id!==year.exercise?.moduleId)return")
+s=s.replace('<button class="btn primary" data-module="${E(year.exercise?.moduleId)}">Открыть подключённый пример</button>', '${year.exercise?`<button class="btn primary" data-module="${E(year.exercise.moduleId)}">Открыть подключённый пример</button>`:\'\'}')
+s=s.replace('Норматив подтверждён','Норматив подтверждён')
+s=s.replace('09.02.07 · Подготовка к экзамену</strong>', '${E(c.specialty)} · ${E(c.specialtyTitle)}</strong>')
+s=s.replace('aria-label="Переключить цветовую тему">${theme===\'dark\'?\'Светлая тема\':\'Тёмная тема\'}', 'aria-label="${theme===\'dark\'?\'Включить светлую тему\':\'Включить тёмную тему\'}" title="${theme===\'dark\'?\'Светлая тема\':\'Тёмная тема\'}">${theme===\'dark\'?\'☀\':\'☾\'}')
+s=s.replace('Состав и время модулей 2026 проверены по КОД. Здесь заполнен один ${c.slug===\'is\'?\'учебный пример модуля\':\'фрагмент задания\'}; остальные модули пока представлены паспортами. Приложения исходного комплекта ещё не подключены.', 'Карты 2026 и 2027 сверены по переданным документам. В редакции 2026 есть один разобранный пример и 30 вариантов этого упражнения. Редакция 2027 содержит карту, критерии и таймеры; учебные задания ещё готовятся.')
+s=s.replace("?' · ожидает сверки':' · КОД'", "?' · ожидает сверки':y.year===2027?' · КИМ':' · КОД'")
+s=s.replace('<div class="section-title"><h2>Модули базового уровня</h2>', '${examMap()}<div class="section-title"><h2>${year.year===2027?\'Задания\':\'Модули\'} базового уровня</h2>')
+s=s.replace('<div class="workspace">${article()}${aside()}</div>', '${stackPanel()}<div class="workspace">${article()}${aside()}</div>')
+s=s.replace('минут по КОД.', 'минут по ${year.year===2027?\'КИМ\':\'КОД\'}.')
+s=s.replace("year.source.kind==='official-document-mirror'?'копия официального документа на сайте колледжа':'источник ИРПО'", "year.source.kind==='provided-official-document'?'переданный документ ИРПО':year.source.kind==='official-document-mirror'?'копия на сайте колледжа':'источник ИРПО'")
+s=s.replace('Приложения с исходными экзаменационными данными в эту поставку не включены.', 'Архивы приложений учтены в реестре источников; в тренировочные комплекты автоматически не перенесены.')
+s=s.replace("function bind(){", """function bind(){
+ document.querySelectorAll('[data-stack]').forEach(el=>el.onchange=()=>{stackChoice[el.dataset.stack]=el.value;savePrefs();});
+ const stackDownload=document.getElementById('download-stack');if(stackDownload)stackDownload.onclick=()=>download(ExamStacks.files(c,stackChoice),c.slug+'_stack_'+Object.values(stackChoice).join('_')+'.zip');
+""")
+insert="""
+function examMap(){const a=year.assessment;if(!a)return '';return `<section class="exam-map" aria-labelledby="map-title"><div class="map-heading"><div><span class="section-code">${year.year} · ГИА · БАЗОВЫЙ УРОВЕНЬ</span><h2 id="map-title">Карта демонстрационного экзамена</h2><p>${E(c.qualification)}</p></div><div class="map-total"><strong>${a.maxPoints}</strong><span>максимум баллов</span></div><div class="map-total"><strong>${Math.floor(year.totalSeconds/3600)}:${String(year.totalSeconds%3600/60).padStart(2,'0')}</strong><span>часов на экзамен</span></div></div><p class="small">${E(a.note)}</p><details open><summary>За что начисляются баллы · ${a.criteria.length} критериев</summary><div class="scroll-table"><table><thead><tr><th>Критерий</th><th>Оцениваемый результат по документу</th><th>Максимум</th></tr></thead><tbody>${a.criteria.map(r=>`<tr><td>${E(r.id)}</td><td>${E(r.title)}</td><td><strong>${r.points}</strong></td></tr>`).join('')}</tbody></table></div></details><p class="small">${sourceLink(year.source.url+'#page='+a.page,year.documentCode+' · таблица 7, стр. '+a.page)} · утверждение ${E(year.source.approval)}.</p></section>`;}
+function stackPanel(){return `<section class="stack-panel"><details><summary>Соберите учебный стек <span class="small">· 8 совместимых сочетаний</span></summary><p>Один каталог V00: интерфейс запрашивает данные у сервера. Слои можно заменять независимо — формат ответа остаётся одинаковым.</p><div class="stack-grid">${Object.entries(ExamStacks.options).map(([key,options])=>`<label>${({ui:'1. Интерфейс',server:'2. Сервер',store:'3. Данные'})[key]}<select data-stack="${key}">${options.map(([id,label])=>`<option value="${id}" ${stackChoice[key]===id?'selected':''}>${E(label)}</option>`).join('')}</select></label>`).join('')}</div><div class="stack-contract">Интерфейс → GET /api/items → сервер → SQLite или JSON<br><code>[{ "id": 1, "name": "Название" }]</code></div><p class="small">В комплекте: исходники, данные V00, команда запуска и проверка результата. JSON — файловый источник; этот учебный пример чтения каталога не заменяет экзаменационную базу и полное приложение. Python 3.10+ или Node.js 22.14+; внешних пакетов нет.</p><button class="btn primary" id="download-stack">Скачать выбранную связку с примером</button></details></section>`;}
+"""
+s=s.replace('function render(){',insert+'\nfunction render(){')
+f.write_text(s,encoding='utf-8')
+f=p/'src/core.js';s=f.read_text(encoding='utf-8').replace("assert(mi.has(y.exercise.moduleId),'Пример ссылается на неизвестный модуль');", "if(y.exercise)assert(mi.has(y.exercise.moduleId),'Пример ссылается на неизвестный модуль');\n        else assert(y.status==='passport','Нет учебного примера');\n        if(y.assessment)assert(y.assessment.criteria.reduce((s,r)=>s+r.points,0)===y.assessment.maxPoints,'Сумма баллов не совпадает');")
+f.write_text(s,encoding='utf-8')
+f=p/'src/index.html';s=f.read_text(encoding='utf-8').replace('<script defer src="app.js">','<script defer src="stack-tools.js"></script><script defer src="app.js">').replace('<link rel="stylesheet"','<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%278%27 fill=%27%23ed131c%27/%3E%3Cpath d=%27M8 8h16v16H8zM12 12h8M12 16h8M12 20h5%27 stroke=%27white%27 fill=%27none%27 stroke-width=%272%27/%3E%3C/svg%3E"><link rel="stylesheet"')
+f.write_text(s,encoding='utf-8')
+f=p/'scripts/build.mjs';s=f.read_text(encoding='utf-8').replace("'content-tools.js','app.js'","'content-tools.js','stack-tools.js','app.js'").replace("for(const name of files)","await fs.cp(path.join(root,'source-documents',slug),path.join(out,'sources'),{recursive:true});\n for(const name of files)")
+f.write_text(s,encoding='utf-8')
+f=p/'src/stack-tools.js';s=f.read_text(encoding='utf-8');start=s.index("const db=new DatabaseSync(");end=s.index(';',start)
+s=s[:start]+"const db=new DatabaseSync(fileURLToPath(new URL('catalog.sqlite',import.meta.url)))"+s[end:]
+s=s.replace("import {readFileSync} from 'node:fs';", "import {readFileSync} from 'node:fs';\nimport {fileURLToPath} from 'node:url';")
+f.write_text(s,encoding='utf-8')
+with (p/'src/style.css').open('a',encoding='utf-8') as f:f.write('''
+/* Shared template v0.2: exam map and interchangeable stack example. */
+.exam-map,.stack-panel{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:26px;margin:24px 0}.map-heading{display:flex;align-items:center;gap:32px}.map-heading>div:first-child{flex:1}.map-heading h2{font-size:26px;line-height:1.25;margin:10px 0}.map-heading p{color:var(--muted);margin:0}.map-total{min-width:135px;display:flex;flex-direction:column}.map-total strong{font-size:44px;line-height:1.2;letter-spacing:-2px}.map-total span{color:var(--muted);font-size:12px}.exam-map td:last-child{color:var(--red);font-size:18px;width:100px}.exam-map details{border:0}.stack-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:20px 0}.stack-grid label{font-size:14px;font-weight:bold}.stack-grid select{display:block;width:100%;margin-top:8px;padding:12px;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:8px}.stack-contract{padding:16px;border-left:3px solid var(--red);background:var(--soft);font-size:14px}.stack-panel details{border:0}.stack-panel summary{font-size:20px}#theme{font-size:25px;line-height:1;width:48px;padding:8px}.brand-emblem{flex-shrink:0}body.dark{--blue:#a9baff;--red:#ff5862}.hero{min-height:235px;padding-top:32px;padding-bottom:30px}.hero h1{font-size:clamp(28px,3vw,40px)}
+@media(max-width:780px){.map-heading{flex-wrap:wrap;gap:20px}.map-heading>div:first-child{flex-basis:100%}.map-total strong{font-size:36px}.stack-grid{grid-template-columns:1fr}.exam-map,.stack-panel{padding:20px}.map-heading h2{font-size:23px}.stack-panel summary{font-size:18px}}
+@media print{.stack-panel{display:none}.exam-map{border:0;padding:0}.map-total strong{font-size:24pt}}
+''')
+print('Shared UI updated.')

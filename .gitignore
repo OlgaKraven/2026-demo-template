@@ -1,0 +1,9 @@
+node_modules/
+private/
+*.class
+__pycache__/
+reports/java-classes/
+# Промежуточные извлечения и отчёты проверки: пересобираются локально,
+# не нужны для запуска опубликованного шаблона.
+reports/
+practice-assets/

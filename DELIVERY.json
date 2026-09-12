@@ -1,0 +1,31 @@
+{
+  "package": "exam-prep-static-template",
+  "version": "0.3.0",
+  "sites": [
+    "web",
+    "is",
+    "programmer"
+  ],
+  "demoExercises": 3,
+  "trainingVariantsPerExercise": 30,
+  "fullExamCoursesReady": 0,
+  "document2027Connected": true,
+  "savedExampleAndTrainingZIPs": [
+    "files/web/web_V00_webstorm_solution.zip",
+    "files/web/web_V01_training.zip",
+    "files/web/web_V30_training.zip",
+    "files/web/web_V00_vscode_solution.zip",
+    "files/programmer/programmer_V00_java_solution.zip",
+    "files/programmer/programmer_V00_python_solution.zip",
+    "files/programmer/programmer_V30_training.zip",
+    "files/programmer/programmer_V01_training.zip",
+    "files/programmer/programmer_V00_csharp_solution.zip",
+    "files/is/is_V00_mysql_solution.zip",
+    "files/is/is_V30_training.zip",
+    "files/is/is_V00_postgres_solution.zip",
+    "files/is/is_V01_training.zip",
+    "files/is/is_V00_mssql_solution.zip"
+  ],
+  "publishedSamplesReady": 6,
+  "officialPracticeTasks": 23
+}
