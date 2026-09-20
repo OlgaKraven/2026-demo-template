@@ -6,7 +6,7 @@
  function shell(title,url){
   const previous=document.activeElement,d=document.createElement('dialog');d.className='resource-dialog';d.setAttribute('aria-labelledby','resource-title');
   d.innerHTML='<header class="resource-head"><h2 id="resource-title">'+E(title)+'</h2><div><a class="btn" href="'+E(url)+'" download data-download>Скачать</a><button class="btn" data-close>Закрыть</button></div></header><div class="resource-tools"></div><div class="resource-body" tabindex="0"><p role="status">Открываем файл…</p></div>';
-  document.body.append(d);d.addEventListener('close',()=>{d.remove();if(previous?.isConnected)previous.focus({preventScroll:true});});d.querySelector('[data-close]').onclick=()=>d.close();d.showModal();return d;
+  document.body.append(d);d.addEventListener('close',()=>{d.remove();if(previous?.isConnected)previous.focus({preventScroll:true});});d.querySelector('[data-close]').onclick=()=>d.close();root.ExamProductTour?.add('files',d.querySelector('.resource-head > div'),'Гид по файлам');d.showModal();return d;
  }
  function imageView(src,title){
   const u=localUrl(src);if(!u)return;const d=shell(title||'Изображение',u.href),body=d.querySelector('.resource-body'),tools=d.querySelector('.resource-tools');body.classList.add('resource-image-stage');body.innerHTML='<img alt="'+E(title||'Увеличенное изображение')+'">';const img=body.querySelector('img');let scale=1;
