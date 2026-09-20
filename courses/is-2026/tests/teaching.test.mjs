@@ -7,6 +7,19 @@ import {parseHTML} from 'linkedom';
 import '../src/core.js';
 import '../src/teaching.js';
 
+test('combined presentation includes introduction and all five modules in order for both databases',()=>{
+ const data={};vm.runInNewContext(fs.readFileSync('site/lessons.js','utf8'),data);
+ const {document}=parseHTML('<html><body></body></html>');
+ const modules=Object.keys(data.LESSONS).map((id,i)=>({id,number:i+1,title:id}));
+ for(const lessons of [data.LESSONS,data.EXAMPLE_LESSONS])for(const stack of ['mysql','postgresql']){
+  const slides=ExamTeaching.courseSlides(modules,stack,lessons,'full',document);
+  assert.equal(slides[0].title,'Как работать с учебным проектом');
+  assert.deepEqual(slides.filter(s=>s.cover).map(s=>s.title),modules.map(m=>'Модуль '+m.number+'. '+m.title));
+  const expected=modules.flatMap(m=>ExamTeaching.lessonSlides(lessons[m.id][stack],document));
+  assert.deepEqual(slides.slice(1).filter(s=>!s.cover),expected);
+ }
+});
+
 test('teacher profile accepts optional fields and normalizes a safe materials URL',()=>{
  const value=ExamTeaching.normalizeProfile({fullName:'  Преподаватель  ',materialsUrl:'https://example.org/materials'});
  assert.equal(value.fullName,'Преподаватель');assert.equal(value.department,'');

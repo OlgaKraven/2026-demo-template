@@ -3,7 +3,7 @@
  'use strict';
  const profileKey='polesie-teacher-v2',materialsUrl='https://disk.yandex.ru/d/h3QUsGWcrr_tsQ';
  const fields={fullName:'ФИО преподавателя',position:'Должность',department:'Кафедра / подразделение',materialsUrl:'Ссылка на материалы'};
- let ctx,profile={},dialog,kind='',slides=[],slideIndex=0,positionKey='',returnFocus,deckDetail='brief';
+ let ctx,profile={},dialog,kind='',slides=[],slideIndex=0,positionKey='',returnFocus,deckDetail='full';
  const E=value=>root.ExamCore.escape(value);
  function normalizeProfile(value){
   if(!value||typeof value!=='object'||Array.isArray(value))throw new Error('Ожидается объект с данными преподавателя.');
@@ -110,8 +110,11 @@
   }
   flush();return result;
  }
+ function courseSlides(modules,stack,lessons,detail,doc){
+  return [{title:'Как работать с учебным проектом',html:'<p>Начните с исходных документов: определите, какие данные нужно хранить и как они связаны.</p><p>Каждый следующий модуль использует результат предыдущего. Сначала повторите действия на учебном примере, затем примените их к своему варианту в тренировке.</p><p>Сохраняйте ER-схему, SQL, приложение и документацию отдельно. Самопроверка помогает проверить результат перед сдачей.</p>'},...modules.flatMap(m=>[{title:'Модуль '+m.number+'. '+m.title,cover:true,html:'<p>Следующий этап учебного маршрута</p>'},...(detail==='brief'?root.PRESENTATION_GUIDES[m.id][stack]:lessonSlides(lessons[m.id][stack],doc))])];
+ }
  function prepareSlides(){
-  const name=ctx.module.title,stackName=ctx.stack==='mysql'?'MySQL':'PostgreSQL';
+  const name=ctx.allModules?'От исходных документов до готового проекта':ctx.module.title,stackName=ctx.stack==='mysql'?'MySQL':'PostgreSQL';
   const seenFiles=new Set();
   const detailed=lessonSlides(ctx.html).filter(slide=>{
    const file=slide.html.match(/data-code-file="(examples\/[^\"]+)"/)?.[1];
@@ -119,13 +122,13 @@
    // A file gets one introduction slide; the complete source opens in the viewer.
    if(seenFiles.has(file))return false;seenFiles.add(file);return true;
   });
-  const content=deckDetail==='brief'?root.PRESENTATION_GUIDES[ctx.module.id][ctx.stack]:detailed;
-  const steps=[...new Map(content.map(x=>[x.title,x])).values()];
+  const content=ctx.allModules?courseSlides(ctx.year.modules,ctx.stack,ctx.lessons,deckDetail):deckDetail==='brief'?root.PRESENTATION_GUIDES[ctx.module.id][ctx.stack]:detailed;
+  const steps=ctx.allModules?ctx.year.modules:[...new Map(content.map(x=>[x.title,x])).values()];
   slides=[{title:name,cover:true,html:`<p class="slide-intro">${ctx.lessonView==='steps'?'Как сделать пошагово':'Как посмотреть готовый пример'}</p><p>C# Windows Forms + ${stackName}</p>${profileHtml()}`},
-   {title:'Материалы для занятия',html:`<p>Работаем с документами и примерами выбранного модуля.</p><ul><li><a href="practice/2026/sample.zip" download>Исходные задания и приложения 2026</a></li><li><a href="downloads/polesie-${ctx.stack}.zip" download>Полный C#‑пример · ${stackName}</a></li><li><a href="sources/2026.pdf" target="_blank" rel="noopener">КОД 09.02.07-5-2026 · исходный документ</a></li>${profile.materialsUrl?`<li><a href="${E(profile.materialsUrl)}" target="_blank" rel="noopener noreferrer">Материалы преподавателя</a></li>`:''}</ul>`},
+   {title:'Материалы для занятия',html:`<p>Работаем с исходными документами и последовательно создаём ER-схему, базу, расчёт, приложение и комплект сдачи.</p><ul><li><a href="practice/2026/sample.zip" download>Исходные задания и приложения 2026</a></li><li><a href="downloads/polesie-${ctx.stack}.zip" download>Полный C#‑пример · ${stackName}</a></li><li><a href="sources/2026.pdf" target="_blank" rel="noopener">КОД 09.02.07-5-2026 · исходный документ</a></li>${profile.materialsUrl?`<li><a href="${E(profile.materialsUrl)}" target="_blank" rel="noopener noreferrer">Материалы преподавателя</a></li>`:''}</ul>`},
    ...Array.from({length:Math.ceil(steps.length/8)},(_,i)=>({title:'Маршрут занятия'+(i?' · продолжение':''),html:'<ol class="slide-agenda" start="'+(i*8+1)+'">'+steps.slice(i*8,i*8+8).map(step=>`<li>${E(step.title)}</li>`).join('')+'</ol>'})),...content,
    {title:'Вопросы и обсуждение',cover:true,html:'<p class="slide-intro">Какой шаг стоит повторить вместе?</p><ul><li>Объясните назначение разобранных элементов.</li><li>Покажите результат в своём проекте.</li><li>Назовите способ проверить его правильность.</li></ul>'}];
-  positionKey=['polesie-slide-v3',ctx.year.contentVersion,ctx.module.id,ctx.stack,ctx.lessonView,deckDetail].join(':');
+  positionKey=['polesie-slide-v3',ctx.year.contentVersion,ctx.allModules?'all-modules-v1':ctx.module.id,ctx.stack,ctx.lessonView,deckDetail].join(':');
   const stored=Number(ctx.get(positionKey));slideIndex=Number.isInteger(stored)?Math.max(0,Math.min(slides.length-1,stored)):0;
  }
  function presentation(){prepareSlides();open('deck');drawSlide();}
@@ -137,7 +140,7 @@
   const heading=isCode&&file?'Разбираем '+file.split('/').pop():(slide.context||slide.title);
   const eyebrow=slide.context?slide.title:(isCode?'Код проекта':'');
   const slideHtml=slide.context?slide.html.replace(/^<h4\b[^>]*>[\s\S]*?<\/h4>/,''):slide.html;
-  dialog.innerHTML=`<header class="teaching-head deck-head"><button class="btn" data-close>← К материалам преподавателя</button><span id="teaching-title">Модуль ${ctx.module.number} · ${ctx.stack==='mysql'?'MySQL':'PostgreSQL'}</span><div class="teaching-actions"><button class="btn" id="deck-detail">${deckDetail==='brief'?'Подробный разбор':'Краткий показ'}</button><button class="btn" id="deck-toc">Содержание</button><button class="btn" id="deck-theme">${ctx.dark?'Светлая':'Тёмная'} тема</button><button class="btn" id="deck-full">На весь экран</button></div></header><progress class="deck-progress" value="${slideIndex+1}" max="${slides.length}" aria-label="Прогресс презентации"></progress><article class="presentation-slide ${slide.cover?'slide-cover':''} ${isCode?'slide-code':''} ${/<img\b/.test(slide.html)?'slide-media':''}"><header class="slide-meta"><span>ДЭ 2026 · 09.02.07</span><span>${String(slideIndex+1).padStart(2,'0')}</span></header><div class="slide-body lesson" tabindex="0">${eyebrow?`<p class="slide-section">${E(eyebrow)}</p>`:''}<h2>${E(heading)}</h2>${file?`<button class="btn slide-code-open" data-preview-url="code/${E(file)}.txt">Открыть и скопировать полный файл</button>`:''}${slide.part>1?'<p class="slide-part">Продолжение · часть '+slide.part+'</p>':''}${slideHtml}</div><footer class="slide-meta"><span>${E(profile.fullName||'Разбор проекта «Полесье»')}</span><span>Модуль ${ctx.module.number} / ${ctx.lessonView==='steps'?'Пошаговый разбор':'Готовый пример'}</span></footer></article><footer class="deck-controls"><button class="btn" id="slide-prev" ${slideIndex===0?'disabled':''}>← Назад</button><span aria-live="polite">${slideIndex+1} / ${slides.length}</span><button class="btn primary" id="slide-next" ${slideIndex===slides.length-1?'disabled':''}>Вперёд →</button></footer><p class="deck-hint" role="status"></p>`;
+  dialog.innerHTML=`<header class="teaching-head deck-head"><button class="btn" data-close>← К материалам преподавателя</button><span id="teaching-title">${ctx.allModules?'Все модули':'Модуль '+ctx.module.number} · ${ctx.stack==='mysql'?'MySQL':'PostgreSQL'}</span><div class="teaching-actions"><button class="btn" id="deck-detail">${deckDetail==='brief'?'Подробный разбор':'Краткий показ'}</button><button class="btn" id="deck-toc">Содержание</button><button class="btn" id="deck-theme">${ctx.dark?'Светлая':'Тёмная'} тема</button><button class="btn" id="deck-full">На весь экран</button></div></header><progress class="deck-progress" value="${slideIndex+1}" max="${slides.length}" aria-label="Прогресс презентации"></progress><article class="presentation-slide ${slide.cover?'slide-cover':''} ${isCode?'slide-code':''} ${/<img\b/.test(slide.html)?'slide-media':''}"><header class="slide-meta"><span>ДЭ 2026 · 09.02.07</span><span>${String(slideIndex+1).padStart(2,'0')}</span></header><div class="slide-body lesson" tabindex="0">${eyebrow?`<p class="slide-section">${E(eyebrow)}</p>`:''}<h2>${E(heading)}</h2>${file?`<button class="btn slide-code-open" data-preview-url="code/${E(file)}.txt">Открыть и скопировать полный файл</button>`:''}${slide.part>1?'<p class="slide-part">Продолжение · часть '+slide.part+'</p>':''}${slideHtml}</div><footer class="slide-meta"><span>${E(profile.fullName||'Разбор проекта «Полесье»')}</span><span>${ctx.allModules?'Все модули':'Модуль '+ctx.module.number} / ${ctx.lessonView==='steps'?'Пошаговый разбор':'Готовый пример'}</span></footer></article><footer class="deck-controls"><button class="btn" id="slide-prev" ${slideIndex===0?'disabled':''}>← Назад</button><span aria-live="polite">${slideIndex+1} / ${slides.length}</span><button class="btn primary" id="slide-next" ${slideIndex===slides.length-1?'disabled':''}>Вперёд →</button></footer><p class="deck-hint" role="status"></p>`;
   root.ExamProductTour?.add('deck',dialog.querySelector('.deck-head .teaching-actions'),'Гид по презентации');
   dialog.querySelector('#deck-detail').onclick=()=>{deckDetail=deckDetail==='brief'?'full':'brief';prepareSlides();drawSlide();};
   closeButton();dialog.querySelector('#slide-prev').onclick=()=>go(slideIndex-1);dialog.querySelector('#slide-next').onclick=()=>go(slideIndex+1);
@@ -160,5 +163,5 @@
   }
   if(dialog?.open&&kind==='deck')drawSlide();
  }
- root.ExamTeaching={mount,normalizeProfile,lessonSlides};
+ root.ExamTeaching={mount,normalizeProfile,lessonSlides,courseSlides};
 })(globalThis);
