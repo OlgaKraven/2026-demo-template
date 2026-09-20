@@ -8,6 +8,9 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
+    "build:course": "npm --prefix courses/is-2026 run build",
+    "test:course": "npm --prefix courses/is-2026 test",
+    "preview:course": "npm --prefix courses/is-2026 run preview",
     "validate": "node scripts/validate.mjs",
     "validate:exam": "node scripts/validate.mjs --exam-ready",
     "test": "node --test tests/*.test.mjs",

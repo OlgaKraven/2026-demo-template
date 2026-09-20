@@ -1,0 +1,10 @@
+node_modules/
+site/
+**/bin/
+**/obj/
+**/connection.local.txt
+.qa/
+.playwright-cli/
+output/
+*.user
+*.suo
